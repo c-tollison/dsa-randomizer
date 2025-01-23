@@ -1,10 +1,21 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
+	"strconv"
 )
 
-type UserCommand struct {}
+type UserCommand struct {
+	DB *sql.DB
+}
+
+type SolvedAssignments struct {
+	ProblemName string
+	StartTime string
+	EndTime string
+}
 
 func (u *UserCommand) Command() string {
 	return "user"
@@ -27,9 +38,25 @@ func (u *UserCommand) Run(args []string) error {
 
 		switch subcommand {
 			case "timer":
-				fmt.Println("timer was invoked")
+				if len(args) > 1 {
+					hours, err := strconv.Atoi(args[1])
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					if hours < 1 || hours > 24 {
+						log.Fatal("Hours must be between 1 and 24 hours")
+					}
+
+					u.updateTimer(hours)
+				} else {
+					fmt.Println("Must pass in number of hours. Usage: ./dsa-randomizer user timer <hours>")
+				}
+				return nil
 			case "streak":
-				fmt.Println("streak was invoked")
+				streak := u.getStreak()
+				fmt.Println("Current streak is", streak)
+				return nil
 			case "history":
 				fmt.Println("history was invoked")
 			default:
@@ -39,4 +66,25 @@ func (u *UserCommand) Run(args []string) error {
 	}
 
 	return nil
+}
+
+func (u *UserCommand) updateTimer(hours int) {
+	stmt, _ := u.DB.Prepare(`
+		UPDATE settings SET timer = ? WHERE id = ?
+	`)
+
+	stmt.Exec(hours, 1)
+}
+
+func (u *UserCommand) getStreak() int {
+	var streak int
+	if err := u.DB.QueryRow(`
+		SELECT streak FROM settings WHERE id = ?
+	`, 1).Scan(&streak); err != nil {
+		if err == sql.ErrNoRows {
+			log.Fatal("No rows found for streak")
+		}
+	}
+
+	return streak
 }

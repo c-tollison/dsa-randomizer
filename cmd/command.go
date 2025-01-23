@@ -6,8 +6,4 @@ type Command interface {
 	Run([]string) error
 }
 
-var Commands = []Command{
-	&DbCommand{},
-	&UserCommand{},
-	&ProblemCommand{},
-}
+

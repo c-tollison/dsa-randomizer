@@ -1,11 +1,14 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
 )
 
 
-type ProblemCommand struct {}
+type ProblemCommand struct {
+	DB *sql.DB
+}
 
 func (p *ProblemCommand) Command() string {
 	return "problem"
