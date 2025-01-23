@@ -35,7 +35,6 @@ func main() {
 		&cmd.ProblemCommand{DB: db},
 	}
 
-
 	if len(args) == 0 || args[0] == "help" {
 		help(commands)
 	} else {

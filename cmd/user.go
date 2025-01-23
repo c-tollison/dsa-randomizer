@@ -48,13 +48,13 @@ func (u *UserCommand) Run(args []string) error {
 						log.Fatal("Hours must be between 1 and 24 hours")
 					}
 
-					u.updateTimer(hours)
+					updateTimer(u.DB, hours)
 				} else {
 					fmt.Println("Must pass in number of hours. Usage: ./dsa-randomizer user timer <hours>")
 				}
 				return nil
 			case "streak":
-				streak := u.getStreak()
+				streak := getStreak(u.DB)
 				fmt.Println("Current streak is", streak)
 				return nil
 			case "history":
@@ -68,17 +68,17 @@ func (u *UserCommand) Run(args []string) error {
 	return nil
 }
 
-func (u *UserCommand) updateTimer(hours int) {
-	stmt, _ := u.DB.Prepare(`
+func updateTimer(db *sql.DB, hours int) {
+	stmt, _ := db.Prepare(`
 		UPDATE settings SET timer = ? WHERE id = ?
 	`)
 
 	stmt.Exec(hours, 1)
 }
 
-func (u *UserCommand) getStreak() int {
+func getStreak(db *sql.DB) int {
 	var streak int
-	if err := u.DB.QueryRow(`
+	if err := db.QueryRow(`
 		SELECT streak FROM settings WHERE id = ?
 	`, 1).Scan(&streak); err != nil {
 		if err == sql.ErrNoRows {

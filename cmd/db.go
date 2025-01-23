@@ -31,8 +31,8 @@ func (d *DbCommand) Run(args []string) error {
 		switch subcommand {
 			case "setup": 
 				fmt.Println("Setting up randomizer.db")
-				d.SetupTables()
-				d.DefaultData()
+				setupTables(d.DB)
+				defaultData(d.DB)
 				fmt.Println("Database setup complete.")
 			case "reset":
 				keepProblemsTable := false
@@ -56,11 +56,11 @@ func (d *DbCommand) Run(args []string) error {
 				}
 
 				fmt.Println("Delete tables")
-				d.DeleteTables(keepProblemsTable)
-				
+				deleteTables(d.DB, keepProblemsTable)
+
 				fmt.Println("Setting up randomizer.db")
-				d.SetupTables()
-				d.DefaultData()
+				setupTables(d.DB)
+				defaultData(d.DB)
 				fmt.Println("Database setup complete.")
 			default:
 				fmt.Println("Unknown db subcommand")
@@ -71,8 +71,8 @@ func (d *DbCommand) Run(args []string) error {
 	return nil
 }
 
-func (d *DbCommand) SetupTables() {
-	_, err := d.DB.Exec(`
+func setupTables(db *sql.DB) {
+	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS problems (
 			id INTEGER PRIMARY KEY,
 			name TEXT NOT NULL,
@@ -84,7 +84,7 @@ func (d *DbCommand) SetupTables() {
 		return
 	}
 
-	_, err = d.DB.Exec(`
+	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS assignments (
 			id INTEGER PRIMARY KEY,
 			problem_id INTEGER REFERENCES problems(id),
@@ -97,7 +97,7 @@ func (d *DbCommand) SetupTables() {
 		return
 	}
 
-	_, err = d.DB.Exec(`
+	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS settings (
 			id INTEGER PRIMARY KEY CHECK (id = 1),
 			timer INTEGER DEFAULT 1,
@@ -111,14 +111,14 @@ func (d *DbCommand) SetupTables() {
 	}
 }
 
-func (d *DbCommand) DefaultData() {
-	stmt, _ := d.DB.Prepare("INSERT INTO settings (timer, streak) VALUES (?, ?)")
+func defaultData(db *sql.DB) {
+	stmt, _ := db.Prepare("INSERT INTO settings (timer, streak) VALUES (?, ?)")
 	stmt.Exec(1, 0)
 	defer stmt.Close()
 }
 
-func (d *DbCommand) DeleteTables(keepProblemsTable bool) {
-	_, err := d.DB.Exec(`
+func deleteTables(db *sql.DB, keepProblemsTable bool) {
+	_, err := db.Exec(`
 		DROP TABLE settings;
 	`)
 
@@ -126,7 +126,7 @@ func (d *DbCommand) DeleteTables(keepProblemsTable bool) {
 		fmt.Println("Error dropping settings table:", err)
 	}
 
-    _, err = d.DB.Exec(`
+    _, err = db.Exec(`
 		DROP TABLE assignments;
 	`)
 
@@ -135,7 +135,7 @@ func (d *DbCommand) DeleteTables(keepProblemsTable bool) {
 	}
 
 	if !keepProblemsTable {
-		_, err = d.DB.Exec(`
+		_, err = db.Exec(`
 			DROP TABLE problems;
 		`)
 

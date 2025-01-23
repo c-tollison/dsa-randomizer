@@ -2,4 +2,4 @@ module github.com/dsa-randomizer
 
 go 1.23.5
 
-require github.com/mattn/go-sqlite3 v1.14.24 // indirect
+require github.com/mattn/go-sqlite3 v1.14.24
