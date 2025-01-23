@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/dsa-randomizer/cmd"
 	_ "github.com/mattn/go-sqlite3"
@@ -23,7 +23,13 @@ func help(commands []cmd.Command) {
 
 func main() {
 	args := os.Args[1:]
-	db, err := sql.Open("sqlite3", path.Base(db_name))
+	execPath, err := os.Executable()
+	if err != nil {
+		log.Fatal(err)
+	}
+	execDir := filepath.Dir(execPath)
+	
+	db, err := sql.Open("sqlite3", filepath.Join(execDir, "randomizer.db"))
 	if err != nil {
 		log.Fatal(err)
 	}
