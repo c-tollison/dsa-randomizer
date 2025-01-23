@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-
 type DbCommand struct {
 	DB *sql.DB
 }
@@ -29,42 +28,42 @@ func (d *DbCommand) Run(args []string) error {
 		subcommand := args[0]
 
 		switch subcommand {
-			case "setup": 
-				fmt.Println("Setting up randomizer.db")
-				setupTables(d.DB)
-				defaultData(d.DB)
-				fmt.Println("Database setup complete.")
-			case "reset":
-				keepProblemsTable := false
+		case "setup":
+			fmt.Println("Setting up randomizer.db")
+			setupTables(d.DB)
+			defaultData(d.DB)
+			fmt.Println("Database setup complete.")
+		case "reset":
+			keepProblemsTable := false
 
-				if len(args) > 1 && args[1] == "-k" {
-					keepProblemsTable = true
-				}
+			if len(args) > 1 && args[1] == "-k" {
+				keepProblemsTable = true
+			}
 
-				if keepProblemsTable {
-					fmt.Println("YOU ARE TRYING TO DELETE ALL DATA EXCEPT THE PROBLEMS YOU HAVE ENTERED, TYPE 'yes' TO CONTINUE")
-				} else {
-					fmt.Println("YOU ARE TRYING TO DELETE ALL DATA, TYPE 'yes' TO CONTINUE")
-				}
+			if keepProblemsTable {
+				fmt.Println("YOU ARE TRYING TO DELETE ALL DATA EXCEPT THE PROBLEMS YOU HAVE ENTERED, TYPE 'yes' TO CONTINUE")
+			} else {
+				fmt.Println("YOU ARE TRYING TO DELETE ALL DATA, TYPE 'yes' TO CONTINUE")
+			}
 
-				var confirmation string
-				fmt.Scan(&confirmation)
-				
-				if confirmation != "yes" {
-					fmt.Println("Aborted reset")
-					return nil;
-				}
+			var confirmation string
+			fmt.Scan(&confirmation)
 
-				fmt.Println("Delete tables")
-				deleteTables(d.DB, keepProblemsTable)
+			if confirmation != "yes" {
+				fmt.Println("Aborted reset")
+				return nil
+			}
 
-				fmt.Println("Setting up randomizer.db")
-				setupTables(d.DB)
-				defaultData(d.DB)
-				fmt.Println("Database setup complete.")
-			default:
-				fmt.Println("Unknown db subcommand")
-				return nil 
+			fmt.Println("Delete tables")
+			deleteTables(d.DB, keepProblemsTable)
+
+			fmt.Println("Setting up randomizer.db")
+			setupTables(d.DB)
+			defaultData(d.DB)
+			fmt.Println("Database setup complete.")
+		default:
+			fmt.Println("Unknown db subcommand")
+			return nil
 		}
 	}
 
@@ -126,7 +125,7 @@ func deleteTables(db *sql.DB, keepProblemsTable bool) {
 		fmt.Println("Error dropping settings table:", err)
 	}
 
-    _, err = db.Exec(`
+	_, err = db.Exec(`
 		DROP TABLE assignments;
 	`)
 
@@ -141,7 +140,7 @@ func deleteTables(db *sql.DB, keepProblemsTable bool) {
 
 		if err != nil {
 			fmt.Println("Error dropping problems table:", err)
-			
+
 		}
 	} else {
 		fmt.Println("Skipped deleting problems table")

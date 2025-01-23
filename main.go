@@ -17,7 +17,7 @@ func help(commands []cmd.Command) {
 	fmt.Println("Usage: dsa-randomizer <command>")
 	fmt.Println("Commands:")
 	for _, c := range commands {
-		fmt.Println("\t", c.Command() + ":", c.Help())
+		fmt.Println("\t", c.Command()+":", c.Help())
 	}
 }
 
@@ -28,7 +28,7 @@ func main() {
 		log.Fatal(err)
 	}
 	execDir := filepath.Dir(execPath)
-	
+
 	db, err := sql.Open("sqlite3", filepath.Join(execDir, "randomizer.db"))
 	if err != nil {
 		log.Fatal(err)

@@ -5,16 +5,19 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
+	"time"
 )
 
 type UserCommand struct {
 	DB *sql.DB
 }
 
-type SolvedAssignments struct {
+type Assignment struct {
 	ProblemName string
-	StartTime string
-	EndTime string
+	ProblemLink string
+	StartTime   sql.NullTime
+	EndTime     sql.NullTime
 }
 
 func (u *UserCommand) Command() string {
@@ -37,31 +40,31 @@ func (u *UserCommand) Run(args []string) error {
 		subcommand := args[0]
 
 		switch subcommand {
-			case "timer":
-				if len(args) > 1 {
-					hours, err := strconv.Atoi(args[1])
-					if err != nil {
-						log.Fatal(err)
-					}
-
-					if hours < 1 || hours > 24 {
-						log.Fatal("Hours must be between 1 and 24 hours")
-					}
-
-					updateTimer(u.DB, hours)
-				} else {
-					fmt.Println("Must pass in number of hours. Usage: ./dsa-randomizer user timer <hours>")
+		case "timer":
+			if len(args) > 1 {
+				hours, err := strconv.Atoi(args[1])
+				if err != nil {
+					log.Fatal(err)
 				}
-				return nil
-			case "streak":
-				streak := getStreak(u.DB)
-				fmt.Println("Current streak is", streak)
-				return nil
-			case "history":
-				fmt.Println("history was invoked")
-			default:
-				fmt.Println("Unknown user subcommand")
-				return nil
+
+				if hours < 1 || hours > 24 {
+					log.Fatal("Hours must be between 1 and 24 hours")
+				}
+
+				updateTimer(u.DB, hours)
+			} else {
+				fmt.Println("Must pass in number of hours. Usage: ./dsa-randomizer user timer <hours>")
+			}
+			return nil
+		case "streak":
+			streak := getStreak(u.DB)
+			fmt.Println("Current streak is", streak)
+			return nil
+		case "history":
+			getHistory(u.DB)
+		default:
+			fmt.Println("Unknown user subcommand")
+			return nil
 		}
 	}
 
@@ -87,4 +90,50 @@ func getStreak(db *sql.DB) int {
 	}
 
 	return streak
+}
+
+func getHistory(db *sql.DB) {
+	assignments := []Assignment{}
+
+	rows, err := db.Query(`
+		SELECT p.name, p.link, a.start_time, a.end_time 
+		FROM assignments a
+		JOIN problems p ON a.problem_id = p.id
+	`)
+	if err != nil {
+		log.Fatalf("Error querying database: %v", err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var assignment Assignment
+		if err := rows.Scan(&assignment.ProblemName, &assignment.ProblemLink, &assignment.StartTime, &assignment.EndTime); err != nil {
+			log.Fatal(err)
+		}
+		assignments = append(assignments, assignment)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Fatalf("Error iterating rows: %v", err)
+	}
+
+	fmt.Printf("%-50s %-35s %-35s\n", "Problem Name", "Start Time", "End Time")
+	fmt.Println(strings.Repeat("-", 100))
+
+	for _, assignment := range assignments {
+		fmt.Printf("%-50s %-35v %-35v\n",
+			assignment.ProblemName,
+			formatNullTime(assignment.StartTime),
+			formatNullTime(assignment.EndTime),
+		)
+	}
+}
+
+func formatNullTime(t sql.NullTime) string {
+	if t.Valid {
+		return t.Time.Format(time.RFC1123)
+	}
+
+	return "No time set"
 }

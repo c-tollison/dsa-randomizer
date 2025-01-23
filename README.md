@@ -44,6 +44,18 @@ You can adjust your timer setting by using this command, passing in the number o
 ./dsa-randomizer user timer 5
 ```
 
+Another useful tip is to add the dsa-randomizer to your path so you can run the program anywhere
+
+```bash
+export PATH=$PATH:$HOME/Development/dsa-randomizer/
+```
+
+I also made an alias for it so I can run commands like `dr user streak`
+
+```bash
+alias dr="dsa-randomizer"
+```
+
 ## Nice to haves
 
 Running this command will give you your current streak
