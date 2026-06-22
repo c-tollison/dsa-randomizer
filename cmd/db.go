@@ -3,6 +3,7 @@ package cmd
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
 type DbCommand struct {
@@ -75,13 +76,20 @@ func setupTables(db *sql.DB) {
 		CREATE TABLE IF NOT EXISTS problems (
 			id INTEGER PRIMARY KEY,
 			name TEXT NOT NULL,
-			link TEXT
+			link TEXT,
+			interval INTEGER DEFAULT 1,
+			ease_factor REAL DEFAULT 2.5,
+			repetitions INTEGER DEFAULT 0,
+			next_review DATE
 		);
 	`)
 	if err != nil {
 		fmt.Println("Error creating problems table:", err)
 		return
 	}
+
+	// Migrate existing tables that predate spaced repetition columns.
+	addSpacedRepetitionColumns(db)
 
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS assignments (
@@ -110,6 +118,21 @@ func setupTables(db *sql.DB) {
 	}
 }
 
+func addSpacedRepetitionColumns(db *sql.DB) {
+	cols := []struct{ name, def string }{
+		{"interval", "INTEGER DEFAULT 1"},
+		{"ease_factor", "REAL DEFAULT 2.5"},
+		{"repetitions", "INTEGER DEFAULT 0"},
+		{"next_review", "DATE"},
+	}
+	for _, col := range cols {
+		_, err := db.Exec(fmt.Sprintf("ALTER TABLE problems ADD COLUMN %s %s", col.name, col.def))
+		if err != nil && !strings.Contains(err.Error(), "duplicate column") {
+			fmt.Println("Error migrating SR column:", err)
+		}
+	}
+}
+
 func defaultData(db *sql.DB) {
 	stmt, _ := db.Prepare("INSERT INTO settings (timer, streak) VALUES (?, ?)")
 	stmt.Exec(1, 0)
@@ -117,30 +140,20 @@ func defaultData(db *sql.DB) {
 }
 
 func deleteTables(db *sql.DB, keepProblemsTable bool) {
-	_, err := db.Exec(`
-		DROP TABLE settings;
-	`)
-
+	_, err := db.Exec(`DROP TABLE settings;`)
 	if err != nil {
 		fmt.Println("Error dropping settings table:", err)
 	}
 
-	_, err = db.Exec(`
-		DROP TABLE assignments;
-	`)
-
+	_, err = db.Exec(`DROP TABLE assignments;`)
 	if err != nil {
 		fmt.Println("Error dropping assignments table:", err)
 	}
 
 	if !keepProblemsTable {
-		_, err = db.Exec(`
-			DROP TABLE problems;
-		`)
-
+		_, err = db.Exec(`DROP TABLE problems;`)
 		if err != nil {
 			fmt.Println("Error dropping problems table:", err)
-
 		}
 	} else {
 		fmt.Println("Skipped deleting problems table")
