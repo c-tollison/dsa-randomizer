@@ -1,5 +1,7 @@
 # DSA Randomizer
 
+![demo](demo.gif)
+
 This is a small side project to get familiar with some new concepts in Go. It also serves as a tracker of all the code challenge problems I work on. The idea of the CLI is allowing users to enter in problems they solve and every day they come back randomly get assigned one of those problems again. Essentially always forcing you to stay on top of many data structure and algorithms concepts.
 
 General flow is to run
