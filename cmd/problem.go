@@ -94,6 +94,19 @@ func deleteProblem(db *sql.DB, id int) {
 	defer stmt.Close()
 }
 
+func truncate(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	return s[:max-3] + "..."
+}
+
+// hyperlink wraps text in an OSC 8 terminal hyperlink so the full URL is
+// clickable even when the displayed text is truncated.
+func hyperlink(url, text string) string {
+	return fmt.Sprintf("\x1b]8;;%s\x1b\\%s\x1b]8;;\x1b\\", url, text)
+}
+
 func listProblems(db *sql.DB) {
 	rows, err := db.Query(`
 		SELECT id, name, link, COALESCE(repetitions, 0),
@@ -122,10 +135,14 @@ func listProblems(db *sql.DB) {
 		problems = append(problems, p)
 	}
 
-	fmt.Printf("%-10s %-40s %-60s %-14s %-10s\n", "ID", "Problem Name", "Problem Link", "Next Review", "Reviews")
-	fmt.Println(strings.Repeat("-", 140))
+	fmt.Printf("%-10s %-40s %-45s %-14s %-10s\n", "ID", "Problem Name", "Problem Link", "Next Review", "Reviews")
+	fmt.Println(strings.Repeat("-", 125))
 	for _, p := range problems {
-		fmt.Printf("%-10d %-40s %-60s %-14s %-10d\n", p.id, p.name, p.link, p.nextReview, p.repetitions)
+		linkText := truncate(p.link, 42)
+		link := hyperlink(p.link, linkText)
+		// Pad manually: %-45s counts invisible OSC bytes as width, so we do it ourselves.
+		padding := strings.Repeat(" ", 45-len(linkText))
+		fmt.Printf("%-10d %-40s %s%s %-14s %-10d\n", p.id, p.name, link, padding, p.nextReview, p.repetitions)
 	}
 }
 
